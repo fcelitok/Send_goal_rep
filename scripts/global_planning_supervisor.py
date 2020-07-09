@@ -37,7 +37,7 @@ class MoveBaseSequence():
             self.pose_seq.append(Pose(Point(*point),quat_seq[n-3])) #creating pose list which every element include [x,y,z,quatset]
             n += 1
         
-        #create initial pose publisher ekleme
+        #create initial pose publisher added
         self.pub = rospy.Publisher('/initialpose',PoseWithCovarianceStamped,queue_size=10)
         init_pose_msg = PoseWithCovarianceStamped()
         init_pose_msg.header.frame_id = 'map'

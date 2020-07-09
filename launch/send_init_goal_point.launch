@@ -1,0 +1,16 @@
+<launch>
+
+<!-- MoveBaseSeq node launch and Points Sequence ROS Parameters Loading -->
+
+    <!--Run move_base_seqs node-->
+        <node pkg="global_planning_supervisor_pkg" type="send_goal_point.py" name="send_goal_point" output="screen">
+
+        <!-- Initial pose paramaters   [x,y,theta]-->
+            <rosparam param="init_point_pose_param">[-2.0,-0.5,90]</rosparam>
+
+        <!-- Load Point (Cartesian Coordinates wrt "map" RF, in meters  [x,y,theta]) -->
+            <rosparam param="goal_point_pose_param">[1.0,0.5,90]</rosparam>
+
+        </node>
+
+</launch>
