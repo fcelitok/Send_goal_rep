@@ -8,7 +8,7 @@ import math
 from std_msgs.msg import String
 from move_base_msgs.msg import MoveBaseGoal, MoveBaseAction
 from actionlib_msgs.msg import GoalStatus
-from geometry_msgs.msg import Pose, Point, Quaternion
+from geometry_msgs.msg import Pose, Point, Quaternion, PoseWithCovarianceStamped
 from tf.transformations import quaternion_from_euler
 
 class MoveBaseSequence():
@@ -18,9 +18,12 @@ class MoveBaseSequence():
         rospy.init_node('move_base_sequence')
         points_seq = rospy.get_param('global_planning_supervisor/p_seq')
         yaweulerangles_seq = rospy.get_param('global_planning_supervisor/yea_seq')
+        init_pose = rospy.get_param('global_planning_supervisor/init_pose_param') #ekleme
         quat_seq = list() #list of quaternions
         self.pose_seq = list()
         self.goal_cnt = 0
+
+        quat_init = Quaternion(*(quaternion_from_euler(0, 0, init_pose[2]*math.pi/180, axes='sxyz'))) #ekleme
 
         for yawangle in yaweulerangles_seq:
             #Unpacking the quaternion list and passing it as arguments to Quaternion message constructor
@@ -31,8 +34,18 @@ class MoveBaseSequence():
         points = [points_seq[i:i+n] for i in range(0, len(points_seq), n)]
 
         for point in points:
-            self.pose_seq.append(Pose(Point(*point),quat_seq[n-3])) #creating pose list which every element include [x,y,z,q]
+            self.pose_seq.append(Pose(Point(*point),quat_seq[n-3])) #creating pose list which every element include [x,y,z,quatset]
             n += 1
+        
+        #create initial pose publisher ekleme
+        self.pub = rospy.Publisher('/initialpose',PoseWithCovarianceStamped,queue_size=10)
+        init_pose_msg = PoseWithCovarianceStamped()
+        init_pose_msg.header.frame_id = 'map'
+        init_pose_msg.pose.pose.position.x = init_pose[0]
+        init_pose_msg.pose.pose.position.y = init_pose[1]
+        init_pose_msg.pose.pose.orientation.w = quat_init.w
+
+        
 
         #creat action client
         self.client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
@@ -45,6 +58,11 @@ class MoveBaseSequence():
             return
         rospy.loginfo("Connected to move base server")
         rospy.loginfo("Starting goals achievements ...")
+
+        self.pub.publish(init_pose_msg)        #Initial pose publisher
+        rospy.loginfo("INITIAL POSE SEND")
+        #rospy.loginfo("Sending Initial pose " + str(init_pose_msg))
+
         self.movebase_client()
 
 
@@ -82,7 +100,7 @@ class MoveBaseSequence():
                 next_goal.target_pose.header.frame_id = "map"
                 next_goal.target_pose.header.stamp = rospy.Time.now()
                 next_goal.target_pose.pose = self.pose_seq[self.goal_cnt]
-                
+
                 rospy.loginfo("Sending goal pose "+str(self.goal_cnt+1)+" to Action Server")
                 rospy.loginfo(str(self.pose_seq[self.goal_cnt]))
                 self.client.send_goal(next_goal, self.done_cb, self.active_cb, self.feedback_cb) 
