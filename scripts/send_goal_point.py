@@ -10,22 +10,7 @@ from move_base_msgs.msg import MoveBaseGoal, MoveBaseAction
 from actionlib_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose, Point, Quaternion, PoseWithCovarianceStamped
 from tf.transformations import quaternion_from_euler
- 
-#added
-#class TfTransform():
-#    def __init__(self):
-#        
-#        TFx = GGoal.initial_point[0]
-#        TFy = GGoal.initial_point[1]
-#        TFw = GGoal.initial_point[2]
-#
-#        br = tf.TransformBroadcaster()
-#        br.sendTransform((TFx,TFy,0),
-#                         tf.transformations.quaternion_from_euler(0, 0, TFw),
-#                         rospy.Time.now(),"base_footprint","map")
-
-#######       
-
+       
 
 
 class InitialGoalMove():
@@ -36,10 +21,10 @@ class InitialGoalMove():
         self.goal_point = []
         
         rospy.init_node('from_initial_to_goal_node')
-        initial_point = rospy.get_param('send_goal_point/init_point_pose_param')
+        self.initial_point = rospy.get_param('send_goal_point/init_point_pose_param')
         self.goal_point = rospy.get_param('send_goal_point/goal_point_pose_param')
 
-        initial_quat = Quaternion(*(quaternion_from_euler(0,0,initial_point[2]*math.pi/180,axes='sxyz')))
+        initial_quat = Quaternion(*(quaternion_from_euler(0,0,self.initial_point[2]*math.pi/180,axes='sxyz')))
         self.goal_quat = Quaternion(*(quaternion_from_euler(0,0,self.goal_point[2]*math.pi/180,axes='sxyz')))
 
         #create initial pose publisher 
@@ -47,15 +32,16 @@ class InitialGoalMove():
         init_pose_msg = PoseWithCovarianceStamped()
         init_pose_msg.header.frame_id = 'map'
         
-        init_pose_msg.pose.pose.position.x = initial_point[0]
-        init_pose_msg.pose.pose.position.y = initial_point[1]
+        init_pose_msg.pose.pose.position.x = self.initial_point[0]
+        init_pose_msg.pose.pose.position.y = self.initial_point[1]
         init_pose_msg.pose.pose.orientation.w = initial_quat.w
         
+        self.Tftransform() #added
 
         #create action client
         self.client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         rospy.loginfo("Waiting for move_base action server...")
-        wait = self.client.wait_for_server(rospy.Duration(5.0))
+        wait = self.client.wait_for_server(rospy.Duration(10.0))
 
         if not wait:
             rospy.logerr("Action server not available!")
@@ -69,6 +55,21 @@ class InitialGoalMove():
         rospy.loginfo("INITIAL POSE SEND")
 
         self.movebase_client()
+
+
+#added
+    def Tftransform(self):
+        
+        TFx = self.initial_point[0]
+        TFy = self.initial_point[1]
+        TFw = self.initial_point[2]
+
+        br = tf.TransformBroadcaster()
+        br.sendTransform((TFx,TFy,0),
+                         tf.transformations.quaternion_from_euler(0, 0, TFw),
+                         rospy.Time.now(),'base_footprint','map')
+
+####### 
 
     def movebase_client(self):
         
@@ -95,7 +96,6 @@ class InitialGoalMove():
 if __name__ == '__main__':
     try:
         InitialGoalMove()
-        #Tftransform()
 
         #rospy.init_node('movebase_client_py')
         #result = movebase_client()
