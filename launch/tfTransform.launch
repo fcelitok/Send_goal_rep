@@ -1,0 +1,14 @@
+<launch>
+
+<!-- MoveBaseSeq node launch and Points Sequence ROS Parameters Loading -->
+
+    <!--Run move_base_seqs node-->
+        <node pkg="global_planning_supervisor_pkg" type="tfTransform.py" name="tfTransform" output="screen">
+
+        <!-- Initial pose paramaters   [x,y,yaw]-->
+            <rosparam param="init_pose_param">[-2.0,-0.5,90]</rosparam>
+
+
+        </node>
+
+</launch>

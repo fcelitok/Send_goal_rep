@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   move_base_msgs
   geometry_msgs
   actionlib_msgs
+  tf
+  tf2_ros
 )
 
 ## System dependencies are found with CMake's conventions
@@ -166,6 +168,7 @@ include_directories(
  catkin_install_python(PROGRAMS
    scripts/global_planning_supervisor.py
    scripts/send_goal_point.py
+   scripts/tfTransform.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
